@@ -10,33 +10,36 @@
 
 #define MQ_MODE       (S_IRWXU | S_IRWXG | S_IRWXO)
 
-
 #define INCREMENT_COMMAND	('i')
+
 #define MAX_MESSAGES		(10)
+
 #define	MAX_MESSAGES_SIZE	(10)
+
 #define COMMAND_BUFFER_SIZE	(MAX_MESSAGES * MAX_MESSAGES_SIZE)
 
 
 /*Function used for the threads*/
-void *vfnThreadPrint( void *ptr );
-void *vfnThreadIncrement( void *ptr );
+void *vfnThreadPrint(void *pvMessageQueue);
+
+void *vfnThreadIncrement(void *pvMessageQueue);
 
 
 int main (int argc, char *argv[])
 {
-	int flags = 0;
+	int32_t dwflags = 0;
 	struct mq_attr queue_attributes;
 	mqd_t mqd;
 	pthread_t ThreadPrint;
 	pthread_t ThreadIncrement;
 
 
-	flags |=  O_CREAT|O_RDWR;
+	dwflags |=  O_CREAT|O_RDWR;
 	queue_attributes.mq_maxmsg = MAX_MESSAGES;
 	queue_attributes.mq_msgsize = MAX_MESSAGES_SIZE;
 	queue_attributes.mq_flags = 0;
  
-	mqd = mq_open("/Message_queue_test", flags, MQ_MODE,&queue_attributes);
+	mqd = mq_open("/Message_queue_test", dwflags, MQ_MODE,&queue_attributes);
 
 
 	if(mqd < 0)
@@ -59,36 +62,39 @@ int main (int argc, char *argv[])
 }
 
 
-void *vfnThreadPrint( void *ptr )
+void *vfnThreadPrint(void *pvMessageQueue)
 {
-	mqd_t * messagequeue = (mqd_t*)ptr;
+	mqd_t * PrintMessageQueue = (mqd_t*)pvMessageQueue;
 	char * pbCommandBuffer = (char*)malloc(COMMAND_BUFFER_SIZE);
 
-	printf("Increment Message Queue ID: %d", *messagequeue);
+	printf("Print Message Queue ID: %d\n", *PrintMessageQueue);
 	while(1)
 	{
+		/* Wait for user input and send it*/
 		printf("Write a command:\n");
 		fgets(pbCommandBuffer,COMMAND_BUFFER_SIZE,stdin);
-		
-		(void)mq_send(*messagequeue,pbCommandBuffer,1,0);
+		/* Just the first character will be sent, hence the '1'*/
+		(void)mq_send(*PrintMessageQueue,pbCommandBuffer,1,0);
 		
 	}
 }
 
-void *vfnThreadIncrement( void *ptr )
+void *vfnThreadIncrement(void *pvMessageQueue)
 {
 
-	mqd_t * messagequeue = (mqd_t*)ptr;
+	mqd_t * IncrementMessageQueue = (mqd_t*)pvMessageQueue;
 	char * pbRxBuffer = (char *)malloc(COMMAND_BUFFER_SIZE);
 	uint32_t dwCounter = 0;
 	int32_t RxStatus;
 	
-	printf("Increment Message Queue ID: %d", *messagequeue);
+	printf("Increment Message Queue ID: %d\n", *IncrementMessageQueue);
 
 	while(1)
 	{
 		
-		RxStatus = mq_receive(*messagequeue,pbRxBuffer,COMMAND_BUFFER_SIZE,NULL);
+		/* Waits for a message. The Thread will block until there's a
+		 * message */
+		RxStatus = mq_receive(*IncrementMessageQueue,pbRxBuffer,COMMAND_BUFFER_SIZE,NULL);
 		if(RxStatus > 0)
 		{
 			if(*pbRxBuffer  == INCREMENT_COMMAND)
