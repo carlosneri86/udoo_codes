@@ -6,23 +6,30 @@
 #include <termios.h> /* POSIX terminal control definitions */
 #include <stdint.h> 
 #include <stdlib.h>
- 
+#include <signal.h>
+
 #define APPLICATION_BUFFER_SIZE	(50)
+
+
+void sig_handler (int signo);
+
 
 const int8_t SerialHelloWorld[] =
 {
-    "Hello From UART"
+    "Hello From UART\n"
 };
+
+
+int32_t  SerialPort;
+uint8_t * SerialBuffer;
 
 int main (void)
 {
-	int32_t  SerialPort;
+	
     uint32_t ReadData;	
 	struct termios options;
-	uint8_t * SerialBuffer;
-
-
-	printf("\nInit serial port sample code.....\n");
+	
+    printf("\nInit serial port sample code.....\n");
 	/* Open the UART3 driver as read/write and non blocking*/
 	SerialPort = open("/dev/ttymxc2",O_RDWR|O_NOCTTY|O_NDELAY);
 
@@ -58,14 +65,19 @@ int main (void)
 		return(-1);
 	}
 
+    /* If the user presses ctrl+C this handler will be called */  
+    signal(SIGINT,sig_handler);
+    
 	SerialBuffer = (uint8_t*)malloc(APPLICATION_BUFFER_SIZE); 
 		
 	printf("Starting Echo...\n");		
-	while(1)
+    (void)write(SerialPort,SerialHelloWorld,16);
+
+    while(1)
 	{
 		
 		ReadData = read(SerialPort,SerialBuffer,APPLICATION_BUFFER_SIZE);
-
+        printf("Received Data %d bytes, sending it back\n",ReadData);
 		if(ReadData < 0)
 		{
 			perror("SerialRead");
@@ -85,3 +97,18 @@ int main (void)
 
 }
 
+void sig_handler (int signo)
+{
+
+    /* if the application is closing, free resources */
+    if(signo == SIGINT)
+    {
+        printf("Received SIGINT: Freeing resources....\n");
+
+        close(SerialPort);
+        free(SerialBuffer);
+
+        exit(0);
+
+    }
+}
