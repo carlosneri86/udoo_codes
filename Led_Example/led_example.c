@@ -6,25 +6,25 @@
 
 int main (void)
 {
-	int32_t dwDirectionFile;
-	int32_t dwValueFile;
+	int32_t DirectionFile;
+	int32_t ValueFile;
 
 
-	dwDirectionFile = open("/sys/class/gpio/gpio21/direction", O_WRONLY);
+	DirectionFile = open("/sys/class/gpio/gpio21/direction", O_WRONLY);
 
-	write(dwDirectionFile, "out", 3);
+	write(DirectionFile, "out", 3);
 
-	dwValueFile = open("/sys/class/gpio/gpio21/value", O_WRONLY);
+	ValueFile = open("/sys/class/gpio/gpio21/value", O_WRONLY);
 
 
 	while(1)
 	{
 
-		write(dwValueFile, "1", 1);
+		write(ValueFile, "1", 1);
 
 		usleep(500000);
 		
-		write(dwValueFile, "0", 1);
+		write(ValueFile, "0", 1);
 
 		usleep(500000);
 	}

@@ -1,10 +1,10 @@
 CC = gcc
-CCFLAGS = -Wall -Werror -o
+CFLAGS = -Wall -Werror
 SRCS = led_example.c
 OUT = led_example.out
 
 all:
-	$(CC) $(SRCS) $(CCFLAGS) $(OUT)
+	$(CC) $(SRCS) $(CFLAGS) -o $(OUT)
 
 clean:
 	rm -f $(OUT)
