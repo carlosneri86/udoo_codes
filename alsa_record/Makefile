@@ -8,7 +8,7 @@ all:
 	$(CC) $(SRCS) $(LIBS) $(CCFLAGS) $(OUT)
 
 clean:
-	rm -f $(OUT)
+	rm -f $(OUT) audio_mic.wav
 
 fresh:
 	make clean

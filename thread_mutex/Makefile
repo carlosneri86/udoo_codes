@@ -1,13 +1,14 @@
 CC = gcc
-CCFLAGS = -Wall -lpthread -o
+CFLAGS = -Wall -Werror
 SRCS = thread_mutex.c
 OUT = thread_mutex.out
+LIBS = -lpthread
 
 all:
-	$(CC) $(SRCS) $(CCFLAGS) $(OUT)
+	$(CC) $(SRCS) $(LIBS) $(CFLAGS) -o $(OUT)
 
 clean:
-	rm $(OUT)
+	rm -f $(OUT)
 
 fresh:
 	make clean
