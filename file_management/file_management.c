@@ -11,13 +11,13 @@
 
 int main (void)
 {
-	int fd_file;
+	int32_t fd_file;
 	size_t StringSize;
-	int CloseFile;
+	int32_t CloseFile;
 	char * pbFileBuffer = (char*)malloc(FILE_BUFFER_SIZE);
 
 	/*Creates a file as Write only, on append mode with write permissions*/
-	 fd_file = open("test_file.txt", O_WRONLY|O_CREAT|O_APPEND,S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	 fd_file = open("file_management.txt", O_WRONLY|O_CREAT|O_APPEND,S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
 
 	for(;;)
