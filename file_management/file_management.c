@@ -14,7 +14,7 @@ int main (void)
 	int32_t fd_file;
 	size_t StringSize;
 	int32_t CloseFile;
-	char * pbFileBuffer = (char*)malloc(FILE_BUFFER_SIZE);
+	char * FileBuffer = (char*)malloc(FILE_BUFFER_SIZE);
 
 	/*Creates a file as Write only, on append mode with write permissions*/
 	 fd_file = open("file_management.txt", O_WRONLY|O_CREAT|O_APPEND,S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
@@ -23,12 +23,12 @@ int main (void)
 	for(;;)
 	{
 		/* read data from stdin */
-		/* fgets is blocking and exists at when an "enter" is detected*/
+		/* fgets is blocking and exists when an "enter" is detected*/
 		printf("String to write:\n");
-		fgets(pbFileBuffer,FILE_BUFFER_SIZE,stdin);
+		fgets(FileBuffer,FILE_BUFFER_SIZE,stdin);
 
 		/* look for the key word */
-		CloseFile = strncmp(pbFileBuffer,"Close",5);
+		CloseFile = strncmp(FileBuffer,"Close",5);
 
 		/* In case the key word is written, close the file */
 		if(CloseFile == 0)
@@ -40,9 +40,9 @@ int main (void)
 		
 		CloseFile = 0;
 		/* get the string size and write it to the file*/
-		StringSize = strlen(pbFileBuffer);	
+		StringSize = strlen(FileBuffer);	
 
-		write(fd_file,pbFileBuffer,StringSize);
+		write(fd_file,FileBuffer,StringSize);
 
 	}		
 

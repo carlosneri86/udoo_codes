@@ -1,10 +1,10 @@
 CC = gcc
-CCFLAGS = -Wall -Werror -o
+CFLAGS = -Wall -Werror 
 SRCS = file_management.c
 OUT = file_management.out
 
 all:
-	$(CC) $(SRCS) $(CCFLAGS) $(OUT)
+	$(CC) $(SRCS) $(CFLAGS) -o $(OUT)
 
 clean:
 	rm -f $(OUT)
