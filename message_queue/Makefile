@@ -1,10 +1,10 @@
 CC = gcc
-CCFLAGS = -lpthread -lrt -Wall -Werror -o
+CCFLAGS = -Wall -Werror 
 SRCS = message_queue_sample.c
 OUT = message_queue_sample.out
-
+LIBS = -lpthread -lrt
 all:
-	$(CC) $(SRCS) $(CCFLAGS) $(OUT)
+	$(CC) $(SRCS) $(CCFLAGS) $(LIBS) -o $(OUT)
 
 clean:
 	rm -f $(OUT)
