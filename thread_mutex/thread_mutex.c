@@ -1,32 +1,39 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <stdint.h>
-/*Function used for the threads*/
-void *ThreadPrint( void *ptr );
-void *ThreadIncrement( void *ptr );
 
-uint32_t gu32Counter = 0;
-pthread_mutex_t mymutex1 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mymutex2 = PTHREAD_MUTEX_INITIALIZER;
+/*Function used for the threads*/
+void *vfnThreadPrint(void *pvThreadMutex);
+
+void *vfnThreadIncrement(void *pvThreadMutex);
+
+volatile uint32_t gdwCounter = 0;
+
 
 int main(void)
 {
-	pthread_t threadprint;
-	pthread_t threadincrement;
+	pthread_t ThreadPrint;
+	pthread_t ThreadIncrement;
+	pthread_mutex_t * pMutex;  
+	int32_t dwThreadPrintID;
+	int32_t dwThreadIncrementID;
 
-	int32_t  threadprintID;
-	int32_t  threadIncrementID;
+	pMutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
-    /* Create independent threads each of which will execute function */
+	/* Initialize the mutex */
+	pthread_mutex_init(pMutex, NULL);
+	/* Create independent threads each of which will execute function */
+	dwThreadPrintID = pthread_create(&ThreadPrint, NULL, vfnThreadPrint, (void*)&pMutex);
+	
+	dwThreadIncrementID = pthread_create(&ThreadIncrement, NULL, vfnThreadIncrement, (void*)&pMutex);
+			
+	(void)dwThreadPrintID;
+	(void)dwThreadIncrementID ;
 
-     threadprintID			 = pthread_create( &threadprint, NULL, (void *)ThreadPrint, (void*) NULL);
-     threadIncrementID	 = pthread_create( &threadincrement, NULL, (void *)ThreadIncrement, (void*) NULL);
-	 pthread_mutex_init(&mymutex1, NULL);
-	 pthread_mutex_init(&mymutex2, NULL);
-     /* Wait till threads are complete before main continues. Unless we  */
-     /* wait we run the risk of executing an exit which will terminate   */
-     /* the process and all threads before the threads have completed.   */
+	/* Wait till threads are complete before main continues. Unless we  */
+	/* wait we run the risk of executing an exit which will terminate   */
+ 	/* the process and all threads before the threads have completed.   */
 	while(1)
 	{
 	}
@@ -35,23 +42,25 @@ int main(void)
      exit(0);
 }
 
-void *ThreadPrint( void *ptr )
+void *vfnThreadPrint(void *pvThreadMutex)
 {
-     while(1)
+	pthread_mutex_t * PrintMutex = (pthread_mutex_t*)pvThreadMutex;
+	
+	while(1)
 	{
-		//pthread_mutex_lock(&mymutex2);		
-		printf("%d\n\r",gu32Counter);
-		pthread_mutex_unlock(&mymutex1);
+		printf("%d\n\r",gdwCounter);
+		pthread_mutex_unlock(PrintMutex);
 	}
 }
 
-void *ThreadIncrement( void *ptr )
+void *vfnThreadIncrement(void *pvThreadMutex)
 {
-     while(1)
+	pthread_mutex_t * IncrementMutex = (pthread_mutex_t*)pvThreadMutex;
+
+	while(1)
 	{
-		pthread_mutex_lock(&mymutex1);		
-		gu32Counter++;
-		//pthread_mutex_unlock(&mymutex2);
+		pthread_mutex_lock(IncrementMutex);		
+		gdwCounter++;
 	}
 }
 
