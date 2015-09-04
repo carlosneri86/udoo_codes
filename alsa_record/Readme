@@ -1,0 +1,22 @@
+In order to run this example, first install the following packages:
+
+   apt-get install libasound2 alsa-utils alsa-oss libasound2-dev
+
+And figure out the sound cards available on your device using:
+
+    arecord -l
+
+The application will record and generate a  5 seconds Wave file 
+from the device, sampling rate and channels specified.
+
+Note that for Wave there's no error checking.
+
+An example of how to use it:
+
+./alsa_record.out hw:0,0 48000 2
+
+Where:
+
+hw:0,0 is the card 0, device 0
+48000 is the sampling rate (in Hz)
+2 is the channels
