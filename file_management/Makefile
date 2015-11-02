@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror 
+CFLAGS = -Wall -Werror
 SRCS = file_management.c
 OUT = file_management.out
 
