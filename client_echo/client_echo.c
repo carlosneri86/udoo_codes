@@ -9,11 +9,8 @@
 #include <errno.h>
 #include <arpa/inet.h> 
 
-/* port and server IP */
-#define DESTPORT     1031
-#define DESTIP       "127.0.0.1"
 
-int main (void)
+int main (int argc, char **argv)
 {
     int32_t SocketServer;
     struct sockaddr_in * SocketSettings;
@@ -22,6 +19,13 @@ int main (void)
     int32_t EchoInputSize;
     int32_t EchoReceivedSize;
     int8_t * EchoReceivedBuffer;
+    int32_t TargetPort;
+
+    if(argc != 3)
+    {
+        printf("Usage: ./client_echo <server_ip> <port>\n");
+        return -1;
+    }
 
     /* Create our socket */
     SocketServer = socket(AF_INET, SOCK_STREAM, 0);
@@ -34,10 +38,14 @@ int main (void)
    
     SocketSettings = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
 
+    TargetPort = atoi(argv[2]);
+
+    printf("Connecting to server %s using port %d\n",argv[1],TargetPort);
+
     /* set server settings */   
     SocketSettings->sin_family = AF_INET;
-    SocketSettings->sin_port = htons (DESTPORT);
-    SocketSettings->sin_addr.s_addr = inet_addr(DESTIP);
+    SocketSettings->sin_port = htons (TargetPort);
+    SocketSettings->sin_addr.s_addr = inet_addr(argv[1]);
 
     /*Try to connect the socket for the communication*/
     Status = connect(SocketServer, (struct sockaddr *)SocketSettings,sizeof(struct sockaddr));
@@ -61,23 +69,45 @@ int main (void)
 
         fgets((char *)EchoBuffer,200,stdin);
         EchoInputSize = strlen((char *)EchoBuffer);
-        (void)write(SocketServer,EchoBuffer,EchoInputSize);
+        Status = write(SocketServer,EchoBuffer,EchoInputSize);
 
-        EchoReceivedSize = read(SocketServer,EchoReceivedBuffer,200);
-        if(EchoReceivedSize > 0)
-        {    
-            printf("Received %d characters\nString received:%s\n",EchoReceivedSize,EchoReceivedBuffer);
+        if(Status > 0)
+        {
+
+            EchoReceivedSize = read(SocketServer,EchoReceivedBuffer,200);
+            if(EchoReceivedSize > 0)
+            {    
+                printf("Received %d characters\nString received:%s\n",EchoReceivedSize,EchoReceivedBuffer);
+            }
+            else
+            {
+                printf("\nConnection to server lost\nClosing...\n");
+                
+                fflush(stdout);
+                
+                free(SocketSettings);
+                free(EchoReceivedBuffer);
+                free(EchoBuffer);
+                
+                close(SocketServer);
+
+                return -1;
+            }   
         }
         else
         {
             printf("\nConnection to server lost\nClosing...\n");
+            
             fflush(stdout);
+            
             free(SocketSettings);
             free(EchoReceivedBuffer);
             free(EchoBuffer);
+            
             close(SocketServer);
 
             return -1;
+
         }
         
     }
