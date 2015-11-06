@@ -16,7 +16,8 @@ const int8_t SerialHelloWorld[] =
 
 int main (void)
 {
-	int32_t  SerialPort;	
+	int32_t  SerialPort;
+    uint32_t ReadData;	
 	struct termios options;
 	uint8_t * SerialBuffer;
 
@@ -59,12 +60,23 @@ int main (void)
 
 	SerialBuffer = (uint8_t*)malloc(APPLICATION_BUFFER_SIZE); 
 		
-	(void)write(SerialPort,&SerialHelloWorld[0],sizeof(SerialHelloWorld));
+	printf("Starting Echo...\n");		
+	while(1)
+	{
 		
+		ReadData = read(SerialPort,SerialBuffer,APPLICATION_BUFFER_SIZE);
 
-    (void)read(SerialPort,SerialBuffer,sizeof(SerialHelloWorld));
+		if(ReadData < 0)
+		{
+			perror("SerialRead");
+		}
+		else
+		{
+			(void)write(SerialPort,SerialBuffer,ReadData);
+		}
 
-    printf("\nReceived: %s",SerialBuffer);
+		memset(SerialBuffer,0,ReadData);
+	}
 
 	close(SerialPort);
 	free(SerialBuffer);
