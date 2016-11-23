@@ -1,0 +1,31 @@
+Test app for lab 4.
+
+To execute use:
+
+./ClienteShellPractica <threads> <serverip> <serverport>
+
+threads     = amount of client threads to create
+serverip    = remote server IP
+server port = remote listening port
+
+Once the threads are created a shell is provided. Current commands available:
+
+disconnect = not implemented
+accelerometer <axis> = request an accelerometer axis based on the parameter
+magnetometer <axis>  = request a magnetometer axis based on the parameter 
+gyroscope <axis>     = request a gyro axis based on the parameter
+wrongs               = generates a frame with a wrong sensor parameter
+wrongcs              = generates a frame with wrong checksum
+wrongax              = generates a frame with a wrong axis parameter
+help                 = lists the commands available
+
+Each time a command is executed, each thread shows the response received from
+the server.
+
+An 8 seconds delay is added after each command is executed. Enter a new command
+just after the command prompt "Cliente>" appears. 
+
+------------------------------------------------------------
+log
+------------------------------------------------------------
+v0.1 - Initial release
