@@ -2,7 +2,7 @@ Test app for lab 4.
 
 To execute use:
 
-./ClienteShellPractica <threads> <serverip> <serverport>
+./SensorShell <threads> <serverip> <serverport>
 
 threads     = amount of client threads to create
 serverip    = remote server IP
@@ -23,7 +23,7 @@ Each time a command is executed, each thread shows the response received from
 the server.
 
 An 8 seconds delay is added after each command is executed. Enter a new command
-just after the command prompt "Cliente>" appears. 
+just after the command prompt "UAG>" appears. 
 
 ------------------------------------------------------------
 log
