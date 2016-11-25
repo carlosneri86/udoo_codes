@@ -29,6 +29,7 @@ int main (int argc, char ** argv)
 	pthread_t ClientThread;
     int32_t TargetPort;
     socklen_t NewClientSize;
+	int32_t * Client;
 
     if(argc != 2)
     {
@@ -89,7 +90,11 @@ int main (int argc, char ** argv)
 
 	    printf("Client Accepted!!\nCreating Thread\n");
         
-        ErrorChecking = pthread_create(&ClientThread,NULL,ClientHandling,(void*)NewClientSocket); 
+		Client = malloc(sizeof(int32_t));
+
+		*Client = NewClientSocket;
+
+        ErrorChecking = pthread_create(&ClientThread,NULL,ClientHandling,(void*)Client); 
 
         if(ErrorChecking < 0)
         {
@@ -117,25 +122,25 @@ void * ClientHandling(void * Client)
 {
     int8_t * ClientBuffer;
     int32_t ClientReceivedSize;
-    int32_t ClientSocket = (int32_t)Client;
+    int32_t* ClientSocket = (int32_t*)Client;
 
     ClientBuffer = (int8_t*)malloc(200);
 
     while(1)
     {
-        ClientReceivedSize = read(ClientSocket,ClientBuffer,200);
+        ClientReceivedSize = read(*ClientSocket,ClientBuffer,200);
         
         if(ClientReceivedSize > 0)
         {
-            (void)write(ClientSocket,ClientBuffer,ClientReceivedSize);
+            (void)write(*ClientSocket,ClientBuffer,ClientReceivedSize);
         }
         else
         {
             printf("Connection Lost\nClosing thread");
             fflush(stdout);
-            close(ClientSocket);
+            close(*ClientSocket);
             free(ClientBuffer);
-
+			free(ClientSocket);
             return NULL;
         }
 

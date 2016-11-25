@@ -1,5 +1,5 @@
 /*
- ============================================================================
+ ===========================================================================
  Name        : ClienteShellPractica.c
  Author      : Carlos Neri
  Version     :
@@ -28,7 +28,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#define MAX_COMMANDS_ALLOWED	8
+#define MAX_COMMANDS_ALLOWED    9	
 
 #define MQ_MODE       			(S_IRWXU | S_IRWXG | S_IRWXO)
 
@@ -53,6 +53,9 @@
 #define FRAME_CS_OFFSET			(0x03)
 
 #define COMMAND_WAIT_DELAY		(8)
+
+#define SHELL_PROMPT			("\n\rUAG>")
+
 
 enum
 {
@@ -95,24 +98,26 @@ void SendToAllClients(sensorclient_t * ClientList, uint32_t ClientSize, clientme
 
 uint8_t CalculateChecksum(uint8_t * Frame, uint16_t FrameSize);
 
-clientmessage_t* ShellCommand_Disconnect (uint8_t * CommandParameter);
+clientmessage_t* ShellCommand_WrongSof (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_Accelerometer (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_Magnetometer (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_Gyroscope (uint8_t * CommandParameter);
+clientmessage_t* ShellCommand_AllSensors (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_WrongSensor (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_WrongCs (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_WrongAxis (uint8_t * CommandParameter);
 clientmessage_t* ShellCommand_Help (uint8_t * CommandParameter);
 
 shellcmd_t ShellCommands[MAX_COMMANDS_ALLOWED] =
-{
-		{(int8_t *)"disconnect", ShellCommand_Disconnect},
+{		
 		{(int8_t *)"accelerometer", ShellCommand_Accelerometer},
 		{(int8_t *)"magnetometer", ShellCommand_Magnetometer},
 		{(int8_t *)"gyroscope", ShellCommand_Gyroscope},
+		{(int8_t *)"allsensors", ShellCommand_AllSensors},
 		{(int8_t *)"wrongs", ShellCommand_WrongSensor},
 		{(int8_t *)"wrongcs", ShellCommand_WrongCs},
 		{(int8_t *)"wrongax", ShellCommand_WrongAxis},
+		{(int8_t *)"wrongsof", ShellCommand_WrongSof},
 		{(int8_t *)"help", ShellCommand_Help}
 };
 
@@ -232,7 +237,7 @@ int main(int argc, char * argv[])
 
 		while(1)
 		{
-			Command = (int8_t*)readline("CLIENTE>");
+			Command = (int8_t*)readline(SHELL_PROMPT);
 
 
 			if(Command)
@@ -289,16 +294,7 @@ int main(int argc, char * argv[])
 }
 
 
-clientmessage_t *ShellCommand_Disconnect (uint8_t * CommandParameter)
-{
 
-	clientmessage_t * Command = (clientmessage_t*)malloc(sizeof(clientmessage_t));
-
-
-	printf("\n\rConnect Discommand\n\r");
-
-	return (Command);
-}
 
 clientmessage_t* ShellCommand_Accelerometer (uint8_t * CommandParameter)
 {
@@ -417,6 +413,50 @@ clientmessage_t* ShellCommand_Gyroscope (uint8_t * CommandParameter)
 	return (Command);
 }
 
+clientmessage_t* ShellCommand_AllSensors (uint8_t * CommandParameter)
+{
+	clientmessage_t * Command = NULL;
+	uint32_t AxisToRequest;
+
+	printf("\n\rAll sensors Command\n\r");
+
+	if(CommandParameter != NULL)
+	{
+		AxisToRequest = atoi((char*)CommandParameter);
+
+		if(AxisToRequest && (AxisToRequest <= AXIS_ALL))
+		{
+			Command = (clientmessage_t*)malloc(sizeof(clientmessage_t));
+			Command->MessagePacket[FRAME_SOF_OFFSET] = FRAME_SOF;
+			Command->MessagePacket[FRAME_SENSOR_OFFSET] = SENSOR_ALL;
+			Command->MessagePacket[FRAME_AXIS_OFFSET] = AxisToRequest;
+			Command->MessagePacket[FRAME_CS_OFFSET] = CalculateChecksum(&Command->MessagePacket[0],3);
+
+			Command->MessageSize = 4;
+
+			printf("\n\rFrame to send: 0x%X 0x%X 0x%X 0x%X\n\r",Command->MessagePacket[FRAME_SOF_OFFSET], Command->MessagePacket[FRAME_SENSOR_OFFSET],\
+					Command->MessagePacket[FRAME_AXIS_OFFSET],Command->MessagePacket[FRAME_CS_OFFSET]);
+
+		}
+		else
+		{
+			printf("\n\rWrong command parameter\n\rUsage: allsensors <axis>\n\rx = 1\n\ry = 2\n\rz = 3\n\rxyz = 4\n\r");
+		}
+	}
+	else
+	{
+		printf("\n\rWrong command parameter\n\rUsage: allsensors <axis>\n\rx = 1\n\ry = 2\n\rz = 3\n\rxyz = 4\n\r");
+	}
+
+
+
+	return (Command);
+
+
+
+}
+
+
 clientmessage_t* ShellCommand_WrongSensor (uint8_t * CommandParameter)
 {
 	clientmessage_t * Command = NULL;
@@ -439,7 +479,7 @@ clientmessage_t* ShellCommand_WrongSensor (uint8_t * CommandParameter)
 	{
 		RandomAxis = rand();
 		RandomAxis &= 0xFF;
-	}while((RandomAxis > AXIS_ALL));
+	}while((RandomAxis > AXIS_ALL) || (RandomAxis == 0));
 
 	Command->MessagePacket[FRAME_SOF_OFFSET] = FRAME_SOF;
 	Command->MessagePacket[FRAME_SENSOR_OFFSET] = (uint8_t)RandomSensor;
@@ -470,30 +510,33 @@ clientmessage_t* ShellCommand_WrongCs (uint8_t * CommandParameter)
 
 	srand(time(NULL));
 
-	do
-	{
-		RandomChecksum = rand();
-		RandomChecksum &= 0xFF;
-	}
-	while(RandomChecksum != 0xFF);
-
-	do
+		do
 	{
 		RandomSensor = rand();
 		RandomSensor &= 0xFF;
-	}while((RandomSensor > SENSOR_GYROSCOPE));
+	}while((RandomSensor > SENSOR_GYROSCOPE) || (RandomSensor == 0));
 
 	do
 	{
 		RandomAxis = rand();
 		RandomAxis &= 0xFF;
-	}while((RandomAxis > AXIS_ALL));
+	}while((RandomAxis > AXIS_ALL) || (RandomAxis == 0));
 
 	Command->MessagePacket[FRAME_SOF_OFFSET] = FRAME_SOF;
 	Command->MessagePacket[FRAME_SENSOR_OFFSET] = (uint8_t)RandomSensor;
 	Command->MessagePacket[FRAME_AXIS_OFFSET] = (uint8_t)RandomAxis;
 
 	RealChecksum = CalculateChecksum(&Command->MessagePacket[0],3);
+	
+	do
+	{
+		RandomChecksum = rand();
+		RandomChecksum &= 0xFF;
+	}
+	while((RandomChecksum ==  0xFF) || (RandomChecksum == 0) || (RandomChecksum == RealChecksum));
+
+
+	printf("\n\rReal Checksum = 0x%X\n\rRandom Checksum = 0x%X\n\r",RealChecksum,RandomChecksum);
 
 	Command->MessagePacket[FRAME_CS_OFFSET] = (uint8_t)(RealChecksum & RandomChecksum);
 
@@ -522,7 +565,7 @@ clientmessage_t* ShellCommand_WrongAxis (uint8_t * CommandParameter)
 	{
 		RandomSensor = rand();
 		RandomSensor &= 0xFF;
-	}while((RandomSensor > SENSOR_GYROSCOPE));
+	}while((RandomSensor > SENSOR_GYROSCOPE) || (RandomSensor == 0));
 
 	do
 	{
@@ -531,6 +574,51 @@ clientmessage_t* ShellCommand_WrongAxis (uint8_t * CommandParameter)
 	}while((RandomAxis <= AXIS_ALL));
 
 	Command->MessagePacket[FRAME_SOF_OFFSET] = FRAME_SOF;
+	Command->MessagePacket[FRAME_SENSOR_OFFSET] = (uint8_t)RandomSensor;
+	Command->MessagePacket[FRAME_AXIS_OFFSET] = (uint8_t)RandomAxis;
+	Command->MessagePacket[FRAME_CS_OFFSET] = CalculateChecksum(&Command->MessagePacket[0],3);
+
+	Command->MessageSize = 4;
+
+	printf("\n\rFrame to send: 0x%X 0x%X 0x%X 0x%X\n\r",Command->MessagePacket[FRAME_SOF_OFFSET], Command->MessagePacket[FRAME_SENSOR_OFFSET],\
+			Command->MessagePacket[FRAME_AXIS_OFFSET],Command->MessagePacket[FRAME_CS_OFFSET]);
+
+	return (Command);
+}
+
+clientmessage_t *ShellCommand_WrongSof (uint8_t * CommandParameter)
+{
+	clientmessage_t * Command = NULL;
+	int32_t RandomSensor;
+	int32_t RandomAxis;
+	int32_t RandomSof;
+
+	printf("\n\rWrong SOF Command\n\r");
+
+	Command = (clientmessage_t*)malloc(sizeof(clientmessage_t));
+
+	srand(time(NULL));
+
+	do
+	{
+		RandomSensor = rand();
+		RandomSensor &= 0xFF;
+	}while((RandomSensor > SENSOR_GYROSCOPE) || (RandomSensor == 0));
+
+	do
+	{
+		RandomAxis = rand();
+		RandomAxis &= 0xFF;
+	}while((RandomAxis >= AXIS_ALL) || (RandomAxis == 0));
+
+	do
+	{
+		RandomSof = rand();
+		RandomSof &= 0xFF;
+
+	}while(RandomSof == FRAME_SOF);
+
+	Command->MessagePacket[FRAME_SOF_OFFSET] = RandomSof;
 	Command->MessagePacket[FRAME_SENSOR_OFFSET] = (uint8_t)RandomSensor;
 	Command->MessagePacket[FRAME_AXIS_OFFSET] = (uint8_t)RandomAxis;
 	Command->MessagePacket[FRAME_CS_OFFSET] = CalculateChecksum(&Command->MessagePacket[0],3);
@@ -568,6 +656,8 @@ void * SensorsClient(void* parameter)
 	uint8_t *MessageBuffer = (uint8_t*)malloc(MAX_MESSAGES_SIZE);
 	uint8_t *ServerBuffer = (uint8_t*)malloc(MAX_MESSAGES_SIZE);
 	uint32_t PrintFrame = 0;
+	uint8_t ReceivedChecksum;
+	uint16_t ChecksumSize;
 
 	printf("\n\rClient %d created\n\r",SensorCommands->ThreadId);
 
@@ -595,7 +685,15 @@ void * SensorsClient(void* parameter)
 				}
 				printf("\n\r");
 				PrintFrame = 0;
+				
+				if(ServerBuffer[1] != 0xFE)
+				{
 
+					ChecksumSize = ServerBuffer[2] + 1;
+					ReceivedChecksum = CalculateChecksum(&ServerBuffer[0],ChecksumSize);
+
+					printf("\n\rCalculated checksum = 0x%X\n\r",ReceivedChecksum);
+				}
 				memset(ServerBuffer,0,MAX_MESSAGES_SIZE);
 			}
 			else if(MessageBuffer[0] == APP_CLOSE)
@@ -605,7 +703,13 @@ void * SensorsClient(void* parameter)
 				free(MessageBuffer);
 				free(ServerBuffer);
 				mq_close(*SensorCommands->MessageQueue);
+				usleep(1000);
 				break;
+			}
+			else
+			{
+
+				printf("\n\rWrong SOF\n\r");
 			}
 
 			memset(MessageBuffer,0,MAX_MESSAGES_SIZE);
